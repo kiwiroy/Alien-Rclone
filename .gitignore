@@ -4,6 +4,7 @@
 *.old
 *.swp
 /*.tar.gz
+/_alien/
 /blib/
 /cpanfile.snapshot
 /cover_db

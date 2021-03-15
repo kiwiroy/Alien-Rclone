@@ -1,0 +1,79 @@
+# -*- mode: perl; -*-
+use alienfile;
+use POSIX ();
+
+plugin 'Probe::CommandLine' =>
+  (command => 'rclone', args => ['version'], match => qr/rclone/, version => qr/rclone ([0-9\.]+)/,);
+
+share {
+  requires 'Path::Tiny';
+
+  start_url 'https://downloads.rclone.org/';
+
+  meta_prop->{rclone_filter} = qr/^v/;
+
+  before download => sub {
+    my $build = shift;
+    my $mp    = $build->meta_prop;
+    my $html  = $build->fetch;
+    my $res   = $build->decode($html);
+
+    $res = $build->prefer($res);
+
+    my ($pick, @other) = map { $_->{url} } @{$res->{list}};
+
+    # similar to Core::Download
+    $build->log("candidate *$pick");
+    $build->log("candidate  $_") for splice @other, 0, 7;
+    $build->log("candidate  ...") if @other;
+
+    $build->meta->around_hook(
+      fetch => sub {
+        my $orig = shift;
+        my ($build, $url) = @_;
+        $url ||= $pick;
+        $build->log("fetching $url");
+        my $res = $orig->($build, $url);
+        return $res;
+      }
+    );
+
+    # available freebsd, linux, netbsd, openbsd, osx, plan9, solaris, windows
+    my ($name, $os, $arch, $ext) = ('node', $^O, (POSIX::uname())[4], 'zip');
+    $os = {MSWin32 => 'win', linux => 'linux', darwin => 'osx'}->{$os};
+    $arch =~ s/x86_64/amd64/;
+    $mp->{rclone_filter} = qr/^rclone-v[0-9\.]+-\Q$os\E-\Q$arch\E\.zip/;
+
+  };
+
+  plugin 'Download' => (version => qr/v([0-9\.]+)/, bootstrap_ssl => 1);
+
+  meta->around_hook(
+    prefer => sub {
+      my ($orig, $build, $prop) = (shift, shift, shift);
+      my $meta_prop = $build->meta_prop;
+      my $copy      = my $res = $orig->($build, $prop);
+
+      my $filter = $meta_prop->{rclone_filter};
+      $build->log($filter);
+      my $list = $res->{list} = [grep { $_->{filename} =~ $filter } @{$res->{list}}];
+
+      # try getting source...
+      $res->{list} = [grep { $_->{filename} =~ qr/^rclone-v[0-9\.]+.tar.gz/ } @{$copy->{list}}] unless @$list;
+
+      $res;
+    }
+  );
+
+  plugin 'Extract' => 'zip';
+
+  before build => sub {
+    my $build = shift;
+    require Path::Tiny;
+    my $bin_dir = Path::Tiny->new('.')->absolute->child('bin');
+    $build->log("Creating $bin_dir");
+    $bin_dir->mkpath;
+    Path::Tiny->new('.')->absolute->child('rclone')->move($bin_dir->child('rclone'));
+  };
+  plugin 'Build::Copy';
+};

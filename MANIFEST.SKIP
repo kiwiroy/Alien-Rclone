@@ -65,9 +65,12 @@
 #!end included /opt/local/lib/perl5/5.28/ExtUtils/MANIFEST.SKIP
 
 \.swp$
-^local/
+^local.*/
 ^MANIFEST\.SKIP
 ^README\.md
 ^README\.pod
+^\.github
 ^\.perltidyrc
 ^\.travis.yml
+^_alien/
+^cpanfile\.snapshot
