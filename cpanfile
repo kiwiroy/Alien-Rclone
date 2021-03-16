@@ -5,6 +5,7 @@ requires "perl" => "5.20.0"; # signatures
 requires 'Alien::Build';
 
 build_requires 'Alien::Build::MM';
+build_requires 'Alien::unzip';
 build_requires 'ExtUtils::MakeMaker';
 build_requires 'Mojo::DOM58';
 build_requires 'Path::Tiny';

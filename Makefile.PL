@@ -15,6 +15,7 @@ my %WriteMakefileArgs = (
   OBJECT         => '',
   BUILD_REQUIRES => {
   'Alien::Build::MM' => '0',
+  'Alien::unzip' => '0',
   'ExtUtils::MakeMaker' => '0',
   'Mojo::DOM58' => '0',
   'Path::Tiny' => '0',
