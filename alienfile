@@ -5,6 +5,9 @@ use POSIX ();
 plugin 'Probe::CommandLine' =>
   (command => 'rclone', args => ['version'], match => qr/rclone/, version => qr/rclone ([0-9\.]+)/,);
 
+plugin Digest =>
+  {'rclone-v1.59.2-osx-amd64.zip' => [SHA256 => 'd0a70241212198566028cd3154c418e35cbe73a6cd22c2d851341e88cb650cb7'],};
+
 share {
   requires 'Path::Tiny';
 
@@ -26,6 +29,24 @@ share {
     $build->log("candidate *$pick");
     $build->log("candidate  $_") for splice @other, 0, 7;
     $build->log("candidate  ...") if @other;
+
+    $build->meta->around_hook(fetch => sub {
+      my $orig = shift;
+      my ($build, $url) = @_;
+      unless ($build->meta_prop->{rclone_has_fetched_shasum}) {
+        local $build->meta_prop->{check_digest} = 0;
+        $build->log("fetching shasums ${url}SHA256SUMS");
+        my $shasums = $orig->($build, "${url}SHA256SUMS");
+        my $txt     = Path::Tiny->new($shasums->{path})->slurp_utf8;
+        for my $line (split qr{\n}, $txt) {
+          next unless $line =~ m/^([0-9a-f]+)\s+(rclone.+)$/;
+          $build->meta_prop->{digest}{$2} = [SHA256 => $1];
+          $build->log("    recording $2 with SHA256 $1");
+        }
+        $build->meta_prop->{rclone_has_fetched_shasum}++;
+      }
+      return $orig->($build, $url);
+    });
 
     $build->meta->around_hook(
       fetch => sub {
