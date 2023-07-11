@@ -24,4 +24,4 @@ jobs:
         run: |
           export GLOBIGNORE=
           shopt -s extglob globstar nullglob
-          perltidy --pro=.../.perltidyrc -b -bext='/' **/*.p[lm] **/*.t && git diff --exit-code
+          perltidy -assert-tidy --pro=.../.perltidyrc -b -bext='/' **/*.p[lm] **/*.t

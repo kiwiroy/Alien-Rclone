@@ -28,7 +28,7 @@ my %WriteMakefileArgs = (
 }
 ,
   PREREQ_PM      => {
-  'Alien::Build' => '0',
+  'Alien::Build' => '2.70',
   'perl' => 'v5.20.0'
 }
 ,

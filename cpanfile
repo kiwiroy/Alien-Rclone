@@ -2,7 +2,7 @@
 # You can install this project with the following command
 #   curl -L http://cpanmin.us | perl - https://github.com/kiwiroy/alien-rclone/archive/master.tar.gz
 requires "perl" => "5.20.0"; # signatures
-requires 'Alien::Build';
+requires 'Alien::Build' => '2.70';
 
 build_requires 'Alien::Build::MM';
 build_requires 'Alien::unzip';
