@@ -39,10 +39,10 @@ share {
     );
 
     # available freebsd, linux, netbsd, openbsd, osx, plan9, solaris, windows
-    my ($name, $os, $arch, $ext) = ('node', $^O, (POSIX::uname())[4], 'zip');
-    $os = {MSWin32 => 'win', linux => 'linux', darwin => 'osx'}->{$os};
+    my ($name, $os, $arch, $ext) = ('rclone', $^O, (POSIX::uname())[4], 'zip');
+    $os = {MSWin32 => 'windows', linux => 'linux', darwin => 'osx'}->{$os};
     $arch =~ s/x86_64/amd64/;
-    $mp->{rclone_filter} = qr/^rclone-v[0-9\.]+-\Q$os\E-\Q$arch\E\.zip/;
+    $mp->{rclone_filter} = qr/^rclone-v[0-9\.]+-\Q$os\E-\Q$arch\E\.zip$/;
 
   };
 
