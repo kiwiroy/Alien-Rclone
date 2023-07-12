@@ -5,8 +5,12 @@ use POSIX ();
 plugin 'Probe::CommandLine' =>
   (command => 'rclone', args => ['version'], match => qr/rclone/, version => qr/rclone ([0-9\.]+)/,);
 
+plugin Digest =>
+  {'*' => [SHA256 => 'd0a70241212198566028cd3154c418e35cbe73a6cd22c2d851341e88cb650cb7'],};
+
 share {
   requires 'Path::Tiny';
+  requires 'HTTP::Tiny';
 
   start_url 'https://downloads.rclone.org/';
 
@@ -28,12 +32,32 @@ share {
     $build->log("candidate  ...") if @other;
 
     $build->meta->around_hook(
+      check_digest => sub {
+        my $orig = shift;
+        my ($build, $file, $algo, $expected) = @_;
+        my $url      = $build->install_prop->{download_detail}{url};
+        my $resp     = HTTP::Tiny->new->get("${url}SHA256SUMS");
+        my $txt      = $resp->{content};
+        my $basename = Path::Tiny->new($file->{filename})->basename;
+        for my $line (split qr{\n}, "$txt") {
+          next unless $line =~ m/^([0-9a-f]+)\s+(rclone.+)$/;
+          my ($sha, $filename) = ($1, $2);
+          next unless $filename eq $basename;
+          $expected = $sha;
+        }
+        $build->meta_prop->{digest}{$basename} = [SHA256 => $expected];
+        return $orig->($build, $file, 'SHA256', $expected);
+      }
+    );
+
+    $build->meta->around_hook(
       fetch => sub {
         my $orig = shift;
         my ($build, $url) = @_;
         $url ||= $pick;
         $build->log("fetching $url");
         my $res = $orig->($build, $url);
+        $build->install_prop->{download_detail}{url} = $url;
         return $res;
       }
     );
